@@ -15,15 +15,17 @@ namespace Authorize.Controllers
         private readonly UserDbContext _context;
         private readonly UserService _userService;
         private readonly TokenServices _tokenServices;
+        private readonly ILoggerManager _logger;
 
-        public UserController(UserDbContext context, TokenServices tokenServices, UserService userService) 
+        public UserController(UserDbContext context, TokenServices tokenServices, UserService userService,ILoggerManager logger) 
         {
             _context = context;
             _userService = userService;
             _tokenServices = tokenServices;
+            _logger = logger;
         }
         [HttpPost("Login")]
-        public IActionResult Validate (LoginModel model)
+        public async Task <IActionResult> Validate (LoginModel model)
         {
             var user = _context.Users.SingleOrDefault(p=> p.UserName == model.UserName
             && model.Password == p.Password);
@@ -31,16 +33,17 @@ namespace Authorize.Controllers
             {
                 return Ok(new Response
                 {
-                    Succsess = false,
+                    Success = false,
                     Message = "Invalid username/password"
                 }) ;
             }
-            //cấp token
+            //Gen token
+            var token = await _tokenServices.GenerateToken(user);
             return Ok(new Response
             {
-                Succsess = true,
+                Success = true,
                 Message = "Authenticate success",
-                Data = _tokenServices.GenerateToken(user)
+                Data = token
             });
         }
         [Authorize]
@@ -49,6 +52,13 @@ namespace Authorize.Controllers
         {
             var users = _userService.GetAllUsers();
             return Ok(users);
+        }
+
+        [HttpPost("RenewToken")]
+        public async Task<IActionResult> RenewToken(TokenModel model)
+        {
+            var response = await _tokenServices.RenewToken(model);
+            return response.Success ? Ok(response) : BadRequest(response);
         }
     }
 }

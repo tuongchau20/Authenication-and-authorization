@@ -1,4 +1,5 @@
 ﻿using Authorize.Data;
+using Authorize.Helper;
 using Authorize.Model;
 using Authorize.Repositories;
 using Authorize.Services;
@@ -20,6 +21,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<TokenServices>();
 builder.Services.AddScoped<GenericRepository>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddSingleton<ILoggerManager, LoggerManager>();
 builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("AppSettings"));
 var secretKey = builder.Configuration["AppSettings:SecretKey"];
 var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
