@@ -39,7 +39,7 @@ namespace Authorize.Services
                     //roles
                     new Claim(ClaimTypes.Role, user.Role)
                 }),
-                Expires = DateTime.UtcNow.AddSeconds(20),
+                Expires = DateTime.UtcNow.AddSeconds(60),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey
                 (secretKeyBytes),SecurityAlgorithms.HmacSha256Signature)
             };

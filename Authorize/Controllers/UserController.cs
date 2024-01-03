@@ -54,5 +54,11 @@ namespace Authorize.Controllers
             var response = await _authenticationService.Register(model);
             return Ok(response);
         }
+        [HttpDelete("Delete/{userName}")]
+        public IActionResult DeleteUser(string userName)
+        {
+            _userService.DeleteUser(userName);
+            return Ok(new { message = "User deleted successfully" });
+        }
     }
 }

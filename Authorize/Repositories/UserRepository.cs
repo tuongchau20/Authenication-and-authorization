@@ -32,9 +32,9 @@ namespace Authorize.Repositories
             _context.SaveChanges();
         }
 
-        public void DeleteUser(Guid id)
+        public void DeleteUser(string userName)
         {
-            var user = GetUser(id);
+            var user = _context.Users.FirstOrDefault(u => u.UserName == userName);
             if (user != null)
             {
                 _context.Users.Remove(user);
