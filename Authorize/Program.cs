@@ -20,7 +20,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 //add scoped
 builder.Services.AddScoped<TokenServices>();
-builder.Services.AddScoped<GenericRepository>();
+builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddSingleton<ILoggerManager, LoggerManager>();

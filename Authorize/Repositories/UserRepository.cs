@@ -3,11 +3,11 @@ using Authorize.Model;
 
 namespace Authorize.Repositories
 {
-    public class GenericRepository
+    public class UserRepository
     {
         private readonly UserDbContext _context;
 
-        public GenericRepository(UserDbContext context)
+        public UserRepository(UserDbContext context)
         {
             _context = context;
         }

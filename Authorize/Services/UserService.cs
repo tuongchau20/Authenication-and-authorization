@@ -8,11 +8,11 @@ namespace Authorize.Services
 {
     public class UserService
     {
-        private readonly GenericRepository _genericRepository;
+        private readonly UserRepository _genericRepository;
         private readonly UserDbContext _context;
         private readonly TokenServices _tokenServices;
 
-        public UserService(GenericRepository genericRepository, UserDbContext context,TokenServices tokenServices)
+        public UserService(UserRepository genericRepository, UserDbContext context,TokenServices tokenServices)
         {
             _genericRepository = genericRepository;
             _context = context;

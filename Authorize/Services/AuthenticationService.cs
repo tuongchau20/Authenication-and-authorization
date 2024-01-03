@@ -1,6 +1,7 @@
 ﻿using Authorize.Data;
 using Authorize.Helper;
 using Authorize.Model;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 
@@ -10,38 +11,36 @@ namespace Authorize.Services
     {
         private readonly UserDbContext _context;
         private readonly TokenServices _tokenServices;
-        private readonly ILoggerManager _logger;
-
-        public AuthenticationService(UserDbContext context, TokenServices tokenServices, ILoggerManager logger)
+        private readonly PasswordHasher<User> _passwordHasher;
+        public AuthenticationService(UserDbContext context, TokenServices tokenServices)
         {
             _context = context;
             _tokenServices = tokenServices;
-            _logger = logger;
+            _passwordHasher = new PasswordHasher<User>();
         }
 
         public async Task<Response> Validate(LoginModel model)
         {
-            var user = _context.Users.SingleOrDefault(p => p.UserName == model.UserName && model.Password == model.Password);
-            if (user == null)
+            var user = _context.Users.SingleOrDefault(u => u.UserName == model.UserName);
+
+            if (user != null && _passwordHasher.VerifyHashedPassword(null, user.Password, model.Password) == PasswordVerificationResult.Success)
             {
-                return new Response
-                {
-                    Success = false,
-                    Message = "Invalid username/password"
+                var token = await _tokenServices.GenerateToken(user);
+                return new Response { 
+                    Success = true, 
+                    Message = "Authenticate success",
+                    Data = token 
                 };
             }
 
-            var token = await _tokenServices.GenerateToken(user);
-            return new Response
-            {
-                Success = true,
-                Message = "Authenticate success",
-                Data = token
+            return new Response { 
+                Success = false, 
+                Message = "Invalid username/password" 
             };
         }
+
         public async Task<Response> Register(SignUpUser model)
         {
-            // Kiểm tra xem username đã tồn tại chưa
             var userExists = _context.Users.Any(u => u.UserName == model.UserName);
             if (userExists)
             {
@@ -55,7 +54,7 @@ namespace Authorize.Services
             var newUser = new User
             {
                 UserName = model.UserName,
-                Password = model.Password, 
+                Password = _passwordHasher.HashPassword(null, model.Password),
                 Role = "User"
             };
 
