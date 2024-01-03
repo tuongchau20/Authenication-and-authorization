@@ -18,13 +18,16 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+//add scoped
 builder.Services.AddScoped<TokenServices>();
 builder.Services.AddScoped<GenericRepository>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddSingleton<ILoggerManager, LoggerManager>();
 builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("AppSettings"));
 var secretKey = builder.Configuration["AppSettings:SecretKey"];
 var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
+//add Auhthen
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -37,12 +40,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
     });
+//add authorize
 builder.Services.AddAuthorization(options =>
 {
     // Policy cho Admin: có thể làm mọi thứ
     options.AddPolicy("AdminPolicy", policy => policy.RequireRole(UserConstants.Roles.Admin));
 
-    // Policy cho Manager: chỉ có thể thực hiện các hành động liên quan đến quản lý User
+    // Policy cho Manager: quản lý User
     options.AddPolicy("ManagerPolicy", policy =>
         policy.RequireRole(UserConstants.Roles.Admin,UserConstants.Roles.Manager));
 });

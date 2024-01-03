@@ -1,15 +1,22 @@
-﻿using Authorize.Model;
+﻿using Authorize.Data;
+using Authorize.Helper;
+using Authorize.Model;
 using Authorize.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Authorize.Services
 {
     public class UserService
     {
         private readonly GenericRepository _genericRepository;
+        private readonly UserDbContext _context;
+        private readonly TokenServices _tokenServices;
 
-        public UserService(GenericRepository genericRepository)
+        public UserService(GenericRepository genericRepository, UserDbContext context,TokenServices tokenServices)
         {
             _genericRepository = genericRepository;
+            _context = context;
+            _tokenServices=tokenServices;
         }
 
         public User GetUser(Guid id)
@@ -36,5 +43,6 @@ namespace Authorize.Services
         {
             return _genericRepository.GetAllUsers();
         }
+     
     }
 }

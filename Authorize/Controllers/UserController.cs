@@ -5,6 +5,7 @@ using Authorize.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static Authorize.Model.UserConstants;
 
 namespace Authorize.Controllers
 {
@@ -16,42 +17,15 @@ namespace Authorize.Controllers
         private readonly UserService _userService;
         private readonly TokenServices _tokenServices;
         private readonly ILoggerManager _logger;
-      
-        public UserController(UserDbContext context, TokenServices tokenServices, UserService userService,ILoggerManager logger) 
+        private readonly AuthenticationService _authenticationService;
+
+        public UserController(UserDbContext context, TokenServices tokenServices, UserService userService,ILoggerManager logger, AuthenticationService authenticationService)
         {
             _context = context;
             _userService = userService;
             _tokenServices = tokenServices;
             _logger = logger;
-        }
-        [HttpPost("Login")]
-        public async Task <IActionResult> Validate (LoginModel model)
-        {
-            var user = _context.Users.SingleOrDefault(p=> p.UserName == model.UserName
-            && model.Password == p.Password);
-            if (user == null)
-            {
-                return Ok(new Response
-                {
-                    Success = false,
-                    Message = "Invalid username/password"
-                }) ;
-            }
-            //Gen token
-            var token = await _tokenServices.GenerateToken(user);
-            return Ok(new Response
-            {
-                Success = true,
-                Message = "Authenticate success",
-                Data = token
-            });
-        }
-        [Authorize]
-        [HttpGet]
-        public ActionResult<IEnumerable<User>> GetAllUsers()
-        {
-            var users = _userService.GetAllUsers();
-            return Ok(users);
+            _authenticationService = authenticationService;
         }
 
         [HttpPost("RenewToken")]
@@ -59,6 +33,26 @@ namespace Authorize.Controllers
         {
             var response = await _tokenServices.RenewToken(model);
             return response.Success ? Ok(response) : BadRequest(response);
+        }
+       
+        [Authorize(Policy = "AdminPolicy")]
+        [HttpGet]
+        public ActionResult<IEnumerable<User>> GetAllUsers()
+        {
+            var users = _userService.GetAllUsers();
+            return Ok(users);
+        }
+        [HttpPost("Login")]
+        public async Task<IActionResult> Validate(LoginModel model)
+        {
+            var rs = await _authenticationService.Validate(model);
+            return Ok(rs);
+        }
+        [HttpPost("Register")]
+        public async Task<IActionResult> Register(SignUpUser model)
+        {
+            var response = await _authenticationService.Register(model);
+            return Ok(response);
         }
     }
 }
