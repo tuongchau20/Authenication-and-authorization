@@ -35,8 +35,9 @@ namespace Authorize.Services
                 {
                     new Claim("Name", user.UserName),
                     new Claim("Id",user.Id.ToString()),
-                    new Claim (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                    new Claim (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                     //roles
+                    new Claim(ClaimTypes.Role, user.Role)
                 }),
                 Expires = DateTime.UtcNow.AddSeconds(20),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey

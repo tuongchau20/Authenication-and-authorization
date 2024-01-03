@@ -37,6 +37,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
     });
+builder.Services.AddAuthorization(options =>
+{
+    // Policy cho Admin: có thể làm mọi thứ
+    options.AddPolicy("AdminPolicy", policy => policy.RequireRole(UserConstants.Roles.Admin));
+
+    // Policy cho Manager: chỉ có thể thực hiện các hành động liên quan đến quản lý User
+    options.AddPolicy("ManagerPolicy", policy =>
+        policy.RequireRole(UserConstants.Roles.Admin,UserConstants.Roles.Manager));
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

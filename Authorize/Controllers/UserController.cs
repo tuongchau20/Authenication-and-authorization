@@ -16,7 +16,7 @@ namespace Authorize.Controllers
         private readonly UserService _userService;
         private readonly TokenServices _tokenServices;
         private readonly ILoggerManager _logger;
-
+      
         public UserController(UserDbContext context, TokenServices tokenServices, UserService userService,ILoggerManager logger) 
         {
             _context = context;
