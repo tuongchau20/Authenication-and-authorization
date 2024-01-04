@@ -41,6 +41,10 @@ namespace Authorize.Repositories
                 _context.SaveChanges();
             }
         }
+        public IEnumerable<User> GetUsersByRole()
+        {
+            return _context.Users.Where(u => u.Role == "User").ToList();
+        }
 
     }
 }

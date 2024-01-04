@@ -23,7 +23,10 @@ namespace Authorize.Services
         {
             return _userRepository.GetUser(id);
         }
-
+        public IEnumerable<User> GetUsersByRole(string roleName)
+        {
+            return _context.Users.Where(u => u.Role == roleName).ToList();
+        }
         public void CreateUser(User user)
         {
             _userRepository.AddUser(user);
@@ -43,6 +46,6 @@ namespace Authorize.Services
         {
             return _userRepository.GetAllUsers();
         }
-     
+        
     }
 }

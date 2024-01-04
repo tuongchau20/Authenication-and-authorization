@@ -43,10 +43,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //add authorize
 builder.Services.AddAuthorization(options =>
 {
-    // Policy cho Admin: có thể làm mọi thứ
+    // Policy  Admin: có thể làm mọi thứ
     options.AddPolicy("AdminPolicy", policy => policy.RequireRole(UserConstants.Roles.Admin));
 
-    // Policy cho Manager: quản lý User
+    // Policy Manager: quản lý User
     options.AddPolicy("ManagerPolicy", policy =>
         policy.RequireRole(UserConstants.Roles.Admin,UserConstants.Roles.Manager));
 });

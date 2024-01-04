@@ -19,7 +19,7 @@ namespace Authorize.Controllers
         private readonly ILoggerManager _logger;
         private readonly AuthenticationService _authenticationService;
 
-        public UserController(UserDbContext context, TokenServices tokenServices, UserService userService,ILoggerManager logger, AuthenticationService authenticationService)
+        public UserController(UserDbContext context, TokenServices tokenServices, UserService userService, ILoggerManager logger, AuthenticationService authenticationService)
         {
             _context = context;
             _userService = userService;
@@ -34,31 +34,60 @@ namespace Authorize.Controllers
             var response = await _tokenServices.RenewToken(model);
             return response.Success ? Ok(response) : BadRequest(response);
         }
-       
+
+
         [Authorize(Policy = "AdminPolicy")]
         [HttpGet]
         public ActionResult<IEnumerable<User>> GetAllUsers()
         {
             var users = _userService.GetAllUsers();
             return Ok(users);
+        } 
+
+
+        [Authorize(Policy = "ManagerPolicy")]
+        [HttpGet("GetUsersByRole/{roleName}")]
+        public ActionResult<IEnumerable<User>> GetUsersByRole(string roleName)
+        {
+            var users = _userService.GetUsersByRole(roleName);
+            return Ok(users);
         }
+
+
         [HttpPost("Login")]
         public async Task<IActionResult> Validate(LoginModel model)
         {
             var rs = await _authenticationService.Validate(model);
             return Ok(rs);
         }
+
+        
         [HttpPost("Register")]
         public async Task<IActionResult> Register(SignUpUser model)
         {
             var response = await _authenticationService.Register(model);
             return Ok(response);
         }
+
+
+
+        [Authorize(Policy = "ManagerPolicy")]
         [HttpDelete("Delete/{userName}")]
         public IActionResult DeleteUser(string userName)
         {
-            _userService.DeleteUser(userName);
-            return Ok(new { message = "User deleted successfully" });
+            try
+            {
+                _userService.DeleteUser(userName);
+                return Ok(new { message = "User deleted successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { message = "Access denied" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while deleting the user" });
+            }
         }
     }
 }

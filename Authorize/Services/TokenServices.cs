@@ -19,11 +19,11 @@ namespace Authorize.Services
         private readonly UserDbContext _context;
         private readonly ILoggerManager _logger;
 
-        public TokenServices(IOptionsMonitor<AppSetting> optionsMonitor, UserDbContext context, ILoggerManager logger) 
+        public TokenServices(IOptionsMonitor<AppSetting> optionsMonitor, UserDbContext context, ILoggerManager logger)
         {
             _appSettings = optionsMonitor.CurrentValue;
             _context = context;
-            _logger = logger;   
+            _logger = logger;
         }
         public async Task<TokenModel> GenerateToken(User user)
         {
@@ -41,10 +41,10 @@ namespace Authorize.Services
                 }),
                 Expires = DateTime.UtcNow.AddSeconds(60),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey
-                (secretKeyBytes),SecurityAlgorithms.HmacSha256Signature)
+                (secretKeyBytes), SecurityAlgorithms.HmacSha256Signature)
             };
             var token = jwtTokenHandler.CreateToken(tokenDescription);
-            var accessToken= jwtTokenHandler.WriteToken(token);
+            var accessToken = jwtTokenHandler.WriteToken(token);
             var refreshToken = GenerateRefreshToken();
 
             //lưu DB
@@ -153,7 +153,7 @@ namespace Authorize.Services
                 _context.Update(storedToken);
                 await _context.SaveChangesAsync();
                 //create new token
-                var user =await _context.Users.SingleOrDefaultAsync(us => us.Id == storedToken.UserId);
+                var user = await _context.Users.SingleOrDefaultAsync(us => us.Id == storedToken.UserId);
                 var token = await GenerateToken(user);
                 return new Response
                 {
