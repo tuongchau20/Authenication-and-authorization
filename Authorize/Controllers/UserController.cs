@@ -36,16 +36,26 @@ namespace Authorize.Controllers
         }
 
 
-        [Authorize(Policy = "AdminPolicy")]
-        [HttpGet]
-        public ActionResult<IEnumerable<User>> GetAllUsers()
+        // [Authorize(Policy = "AdminPolicy")]
+        [HttpGet("all-users")]
+        public async Task<IActionResult> GetAllUsers()
         {
-            var users = _userService.GetAllUsers();
-            return Ok(users);
-        } 
+            try
+            {
+                var users = await _userService.GetAllUsersAsync();
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error occurred: " + ex.Message);
+
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
+            }
+        }
 
 
-        [Authorize(Policy = "ManagerPolicy")]
+
+        //[Authorize(Policy = "ManagerPolicy")]
         [HttpGet("GetUsersByRole/{roleName}")]
         public ActionResult<IEnumerable<User>> GetUsersByRole(string roleName)
         {

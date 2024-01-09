@@ -42,9 +42,9 @@ namespace Authorize.Services
             _userRepository.DeleteUser(userName);
         }
 
-        public IEnumerable<User> GetAllUsers()
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
-            return _userRepository.GetAllUsers();
+            return await _userRepository.GetAllUsersAsync();
         }
         
     }

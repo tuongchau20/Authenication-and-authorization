@@ -8,12 +8,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+//Config SQL server
 var connectionString = builder.Configuration.GetConnectionString("MyDbConnection");
 builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseSqlServer(connectionString));
+var redisConnectionString = builder.Configuration["Redis"];
+// Config Redis
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+});
+builder.Services.AddLazyCache();
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
