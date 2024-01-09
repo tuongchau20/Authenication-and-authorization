@@ -4,59 +4,89 @@ using LazyCache;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
+using StackExchange.Redis;
 
 namespace Authorize.Repositories
 {
     public class UserRepository
     {
         private readonly UserDbContext _context;
-        private readonly IDistributedCache _cache;
+        private readonly IAppCache _lazyCache;
+        private readonly IDistributedCache _distributedCache;
+        private readonly IConnectionMultiplexer _redisConnection;
 
-        public UserRepository(UserDbContext context , IDistributedCache cache)
+        public UserRepository(UserDbContext context, IAppCache lazyCache, IDistributedCache distributedCache, IConnectionMultiplexer redisConnection)
         {
             _context = context;
-            _cache = cache;
-
+            _lazyCache = lazyCache;
+            _distributedCache = distributedCache;
+            _redisConnection = redisConnection;
         }
 
-        public User GetUser(Guid id)
-        {
-            return _context.Users.FirstOrDefault(u => u.Id == id);
-        }
 
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             var cacheKey = "allUsers";
-            var cachedData = await _cache.GetStringAsync(cacheKey);
-            if (!string.IsNullOrEmpty(cachedData))
+            try
             {
-                Console.WriteLine("Retrieved data from cache.");
-                return JsonConvert.DeserializeObject<IEnumerable<User>>(cachedData);
-            }
-
-            var users = await _context.Users.ToListAsync();
-            if (users != null && users.Any())
-            {
-                var serializedUsers = JsonConvert.SerializeObject(users);
-                Console.WriteLine("Serialized Users: " + serializedUsers); // Logging the serialized data
-
-                var cacheEntryOptions = new DistributedCacheEntryOptions
+                //  check cache LazyCache
+                var cachedData = await _lazyCache.GetOrAddAsync(cacheKey, async () =>
                 {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60)
-                };
+                    try
+                    {
+                        // check cache Redis
+                        var redisDb = _redisConnection.GetDatabase();
+                        var redisData = await redisDb.StringGetAsync(cacheKey);
 
-                await _cache.SetStringAsync(cacheKey, serializedUsers, cacheEntryOptions);
-                Console.WriteLine("Data stored in cache.");
+                        if (redisData.HasValue)
+                        {
+                            // Nếu có trong Redis, save vào LazyCache để lần sau truy xuất nhanh hơn
+                            var cachedUsers = JsonConvert.DeserializeObject<IEnumerable<User>>(redisData);
+                            return cachedUsers;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error when retrieving from Redis: " + ex.Message);
+                    }
 
-                return users;
+                    try
+                    {
+                        // Nếu không có trong cache, truy vấn cơ sở dữ liệu
+                        var users = await _context.Users.ToListAsync();
+                        var serializedUsers = JsonConvert.SerializeObject(users);
+
+                        var cacheEntryOptions = new DistributedCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60)
+                        };
+
+                        // save cả  Redis, LazyCache
+                        var redisDb = _redisConnection.GetDatabase();
+                        await redisDb.StringSetAsync(cacheKey, serializedUsers, TimeSpan.FromMinutes(60));
+
+                        return users;
+                    }
+                    catch (Exception ex)
+                    {
+
+                        Console.WriteLine("Error when retrieving from database or setting cache: " + ex.Message);
+                        throw;
+                    }
+                });
+
+                return cachedData;
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("No users found in the database.");
-                return new List<User>();
+                Console.WriteLine("Error when retrieving from cache or database: " + ex.Message);
+                throw;
             }
         }
-
+        public User GetUser(Guid id)
+        {
+            return _context.Users.FirstOrDefault(u => u.Id == id);
+        }
 
         public void AddUser(User user)
         {
@@ -86,3 +116,4 @@ namespace Authorize.Repositories
 
     }
 }
+
