@@ -27,20 +27,61 @@ namespace Authorize.Repositories
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             var cacheKey = "allUsers";
+            var redisDb1 = _redisConnection.GetDatabase(1); 
+
+            // Kiểm tra cache
+            var cachedData = await redisDb1.StringGetAsync(cacheKey);
+            if (!cachedData.IsNull)
+            {
+                var cachedUsers = JsonConvert.DeserializeObject<IEnumerable<User>>(cachedData);
+                return cachedUsers;
+            }
+
+            var users = await _context.Users.ToListAsync();
+            var serializedUsers = JsonConvert.SerializeObject(users);          
+            await redisDb1.StringSetAsync(cacheKey, serializedUsers, TimeSpan.FromMinutes(60));
+
+            return users;
+        }
+
+
+
+        public User GetUser(Guid id)
+        {
+            return _context.Users.FirstOrDefault(u => u.Id == id);
+        }
+
+        public void AddUser(User user)
+        {
+            _context.Users.Add(user);
+            _context.SaveChanges();
+        }
+
+
+
+        public void DeleteUser(string userName)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.UserName == userName);
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+                _context.SaveChanges();
+            }
+        }
+        public async Task<IEnumerable<User>> GetUsersByRoleAsync(string role)
+        {
+            var cacheKey = $"usersByRole_{role}";
             try
             {
-                //  check cache LazyCache
                 var cachedData = await _lazyCache.GetOrAddAsync(cacheKey, async () =>
                 {
                     try
                     {
-                        // check cache Redis
                         var redisDb = _redisConnection.GetDatabase();
                         var redisData = await redisDb.StringGetAsync(cacheKey);
 
                         if (redisData.HasValue)
                         {
-                            // Nếu có trong Redis, save vào LazyCache để lần sau truy xuất nhanh hơn
                             var cachedUsers = JsonConvert.DeserializeObject<IEnumerable<User>>(redisData);
                             return cachedUsers;
                         }
@@ -52,8 +93,7 @@ namespace Authorize.Repositories
 
                     try
                     {
-                        // Nếu không có trong cache, truy vấn cơ sở dữ liệu
-                        var users = await _context.Users.ToListAsync();
+                        var users = await _context.Users.Where(u => u.Role == role).ToListAsync();
                         var serializedUsers = JsonConvert.SerializeObject(users);
 
                         var cacheEntryOptions = new DistributedCacheEntryOptions
@@ -61,15 +101,13 @@ namespace Authorize.Repositories
                             AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(60)
                         };
 
-                        // save cả  Redis, LazyCache
                         var redisDb = _redisConnection.GetDatabase();
-                        await redisDb.StringSetAsync(cacheKey, serializedUsers, TimeSpan.FromMinutes(60));
+                        await redisDb.StringSetAsync(cacheKey, serializedUsers, TimeSpan.FromSeconds(60));
 
                         return users;
                     }
                     catch (Exception ex)
                     {
-
                         Console.WriteLine("Error when retrieving from database or setting cache: " + ex.Message);
                         throw;
                     }
@@ -83,37 +121,7 @@ namespace Authorize.Repositories
                 throw;
             }
         }
-        public User GetUser(Guid id)
-        {
-            return _context.Users.FirstOrDefault(u => u.Id == id);
-        }
 
-        public void AddUser(User user)
-        {
-            _context.Users.Add(user);
-            _context.SaveChanges();
-        }
-
-        public void UpdateUser(User user)
-        {
-            _context.Users.Update(user);
-            _context.SaveChanges();
-        }
-
-        public void DeleteUser(string userName)
-        {
-            var user = _context.Users.FirstOrDefault(u => u.UserName == userName);
-            if (user != null)
-            {
-                _context.Users.Remove(user);
-                _context.SaveChanges();
-            }
-        }
-        public IEnumerable<User> GetUsersByRole()
-        {
-            return _context.Users.Where(u => u.Role == "User").ToList();
-        }
-
-    }
+    } 
 }
 

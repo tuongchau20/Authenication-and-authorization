@@ -32,10 +32,11 @@ namespace Authorize.Services
             _userRepository.AddUser(user);
         }
 
-        public void UpdateUser(User user)
-        {
-            _userRepository.UpdateUser(user);
-        }
+        //public async Task UpdateUserAsync(User user)
+        //{
+        //    await _userRepository.UpdateUserAsync(user);
+        //}
+
 
         public void DeleteUser(string userName)
         {

@@ -17,8 +17,8 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MyDbConnection");
 builder.Services.AddDbContext<UserDbContext>(options =>
     options.UseSqlServer(connectionString));
-var redisConnectionString = builder.Configuration["Redis"];
 // Config Redis
+var redisConnectionString = builder.Configuration["Redis"];
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = redisConnectionString;
